@@ -1,47 +1,40 @@
-#include <iostream>
-#include <vector>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-
+#include<bits/stdc++.h>
 using namespace std;
 
-// Función para calcular la longitud de una ruta
-double calcularLongitudRuta(const vector<int>& ruta, const vector<vector<double>>& matrizAdyacencia) {
+double calcularLongitudRuta(const vector<int>& ruta, const vector<vector<int>>& matrizAdyacencia) {
     double longitud = 0.0;
     for (size_t i = 0; i < ruta.size() - 1; ++i) {
         longitud += matrizAdyacencia[ruta[i]][ruta[i + 1]];
     }
-    longitud += matrizAdyacencia[ruta.back()][ruta.front()]; // Regreso al inicio
+    longitud += matrizAdyacencia[ruta.back()][ruta.front()];
     return longitud;
 }
 
-// Función para generar una solución inicial aleatoria
 vector<int> generarSolucionInicial(int numCiudades) {
-    vector<int> rutaInicial;
-    for (int i = 0; i < numCiudades; ++i) {
-        rutaInicial.push_back(i);
-    }
-    random_shuffle(rutaInicial.begin() + 1, rutaInicial.end()); // Barajar aleatoriamente, evitando cambiar el punto de inicio
+    vector<int> rutaInicial(numCiudades);
+    iota(rutaInicial.begin(), rutaInicial.end(), 0);  // Llena la ruta con 0, 1, 2, ..., numCiudades-1
+    random_device rd;
+    mt19937 g(rd());
+    shuffle(rutaInicial.begin() + 1, rutaInicial.end(), g);  // Mezcla las ciudades excepto la primera
     return rutaInicial;
 }
 
-// Función para generar un vecino intercambiando dos ciudades
 vector<int> generarVecino(const vector<int>& ruta) {
     vector<int> vecino = ruta;
-    int ciudad1 = rand() % (ruta.size() - 1) + 1; // Evitar cambiar el punto de inicio
-    int ciudad2 = rand() % (ruta.size() - 1) + 1; // Evitar cambiar el punto de inicio
+    int ciudad1 = rand() % (ruta.size() - 1) + 1;
+    int ciudad2 = rand() % (ruta.size() - 1) + 1;
     swap(vecino[ciudad1], vecino[ciudad2]);
     return vecino;
 }
 
-// Función para determinar si se acepta un vecino según la probabilidad de Boltzmann
 bool aceptarVecino(double delta, double temperatura) {
-    return (delta < 0.0) || (rand() / (RAND_MAX + 1.0) < exp(-delta / temperatura));
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<double> dis(0.0, 1.0);
+    return (delta < 0.0) || (dis(gen) < exp(-delta / temperatura));
 }
 
-// Algoritmo de Recocido Simulado para TSP
-vector<int> simulatedAnnealingTSP(const vector<vector<double>>& matrizAdyacencia, double temperaturaInicial, double enfriamiento, int iteraciones) {
+vector<int> simulatedAnnealingTSP(const vector<vector<int>>& matrizAdyacencia, double temperaturaInicial, double enfriamiento, int iteraciones) {
     srand(time(0));
 
     int numCiudades = matrizAdyacencia.size();
@@ -76,21 +69,46 @@ vector<int> simulatedAnnealingTSP(const vector<vector<double>>& matrizAdyacencia
 }
 
 int main() {
-    // Ejemplo de matriz de adyacencia (distancias entre ciudades)
-    vector<vector<double>> matrizAdyacencia = {
-        {0, 10, 15, 20},
-        {10, 0, 35, 25},
-        {15, 35, 0, 30},
-        {20, 25, 30, 0}
-    };
+    std::vector<std::vector<int>> algo;
+    // ... (lectura del archivo CSV)
+    const std::string archivo_csv = "grafo1\\g1_1.csv";
 
+    // Abrir el archivo
+    std::ifstream archivo(archivo_csv);
+
+    // Verificar si se abrió correctamente
+    if (!archivo.is_open()) {
+        std::cerr << "Error al abrir el archivo CSV." << std::endl;
+        return 1;  // Salir con código de error
+    }
+
+    
+    // Leer el archivo línea por línea
+    std::string linea;
+    while (std::getline(archivo, linea)) {
+        // Usar un stringstream para dividir la línea en campos
+        std::istringstream ss(linea);
+        std::vector<int> fila;
+
+        // Leer cada campo y agregarlo al vector fila
+        std::string campo;
+        while (std::getline(ss, campo, ';')) {
+            fila.push_back(std::stoi(campo));
+        }
+
+        // Agregar la fila al vector de datos
+        algo.push_back(fila);
+    }
+
+    // Cerrar el archivo después de leer
+    archivo.close();
+    
     // Parámetros del algoritmo
-    double temperaturaInicial = 1000.0;
-    double enfriamiento = 0.98;
-    int iteraciones = 1000;
+    const double temperaturaInicial = 5000.0;
+    const double enfriamiento = 0.97;
+    const int iteraciones = 5000;
 
-    // Ejecutar el algoritmo de Recocido Simulado para TSP
-    vector<int> mejorRuta = simulatedAnnealingTSP(matrizAdyacencia, temperaturaInicial, enfriamiento, iteraciones);
+    vector<int> mejorRuta = simulatedAnnealingTSP(algo, temperaturaInicial, enfriamiento, iteraciones);
 
     // Imprimir la mejor ruta encontrada
     cout << "Mejor Ruta: ";
@@ -100,7 +118,7 @@ int main() {
     cout << endl;
 
     // Imprimir la longitud de la mejor ruta
-    cout << "Longitud de la Mejor Ruta: " << calcularLongitudRuta(mejorRuta, matrizAdyacencia) << endl;
+    cout << "Longitud de la Mejor Ruta: " << calcularLongitudRuta(mejorRuta, algo) << endl;
 
     return 0;
 }
